@@ -47,3 +47,69 @@ val1 = 3;
     (<a href='https://codepen.io/sdras'>@sdras</a>) on <a href='https://codepen.io'>CodePen</a>.
   </iframe>
 </div>
+
+これはかなり素早いので、理解するにはプロキシについての知識がある程度必要です。では、少し詳しく見ていきましょう。プロキシに関する文献はたくさんありますが、実際に知っておく必要があることは、 **プロキシは別のオブジェクトまたは関数を包み、操作を差し込むことができるオブジェクトだといいうことです。**
+
+proxy は次のように使用します: `new Proxy(target, handler)`
+
+```
+const dinner = {
+  meal: 'tacos'
+}
+
+const handler = {
+  get(target, prop) {
+    return target[prop]
+  }
+}
+
+const proxy = new Proxy(dinner, handler)
+console.log(proxy.meal)
+
+// tacos
+```
+
+今のところは、オブジェクトをラップしてそのままそれを返すだけです。かっこいいですが、まだ役に立つ物ではありません。しかし、これを見てください。プロキシでラップしている中で、このオブジェクトに操作を差し込むこともできます。この操作の差し込みはトラップと呼ばれています。
+
+```js
+const dinner = {
+  meal: 'tacos'
+}
+
+const handler = {
+  get(target, prop) {
+    console.log(‘intercepted!’)
+    return target[prop]
+  }
+}
+
+const proxy = new Proxy(dinner, handler)
+console.log(proxy.meal)
+
+// intercepted!
+// tacos
+```
+
+コンソールログ以外にも、ここでは思い通りの操作がなんでもできます。必要な場合は、実際の値を返さないようにすることさえ可能です。これが、 API の作成の置いてプロキシが強力なものになっている理由です。
+
+さらに、プロキシは別の機能も提供してくれます。`target[prop]` のような値をただ返すだけではなく、これをさらに一歩進めて、 `this` のバインディングを適切に行うことができる `Reflect` と呼ばれる機能を使用することができます。これは次のようになります。
+
+```js{7}
+const dinner = {
+  meal: "tacos",
+};
+
+const handler = {
+  get(target, prop, receiver) {
+    return Reflect.get(...arguments);
+  },
+};
+
+const proxy = new Proxy(dinner, handler);
+console.log(proxy.meal);
+
+// intercepted!
+// tacos
+```
+
+前述の通り、何かが変更されたときに最終的な値を更新する API を実装するには、何かが変更されたときに新しい値を設定する必要があります。この処理をハンドラーの `track` という関数で `target` と `key` という引数を渡し行います。
